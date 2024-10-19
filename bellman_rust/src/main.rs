@@ -74,7 +74,7 @@ fn main() {
 
     let rng = &mut OsRng;
 
-    // TODO: Example values: : should change later according to user input
+    // TODO: Example values: : should change later according to public input
     let p = 17u64;
     let q = 23u64;
     let n = p * q;
@@ -137,26 +137,32 @@ fn main() {
         N: format!("{:?}", n_fr),
     };
 
-    // Save proof.json
-    let proof_file = File::create("proof.json").expect("Unable to create proof.json");
-    serde_json::to_writer_pretty(pretty_print_writer(proof_file), &proof_json).expect("Unable to write proof");
 
-    // Save public.json
+
+
+    // Save proof.json and other generated proof files
+
+    let proof_file = File::create("proof.json").expect("Unable to create proof.json");
+
+    serde_json::to_writer_pretty(pretty_print_writer(proof_file), &proof_json).expect("Unable to write proof");
     let public_file = File::create("public.json").expect("Unable to create public.json");
     serde_json::to_writer_pretty(pretty_print_writer(public_file), &public_json).expect("Unable to write public inputs");
-
     println!("Proof and public inputs saved to proof.json and public.json");
 
-    // Verify the proof
+
+// now verify the proof
     println!("Verifying proof...");
+
+
     let n_fr_verify = Fr::from_str(&n.to_string()).expect("Invalid Fr for verification");
     let is_valid = verify_proof(&pvk, &proof, &[n_fr_verify]).expect("Verification failed");
 
     println!("Proof is valid: {}", is_valid);
 
-    // Now, create a recursive proof that verifies the above proof
-    // For demonstration, we'll use the VerifierCircuit which always returns true
-    // In a real scenario, you would implement the Groth16 verification within the circuit
+
+    // create a recursive proof that verifies the above proof
+    // For demonstration,use the VerifierCircuit which always returns true
+    // TODO:implement the Groth16 verification within the circuit
 
     // Create the VerifierCircuit instance
     let verifier_circuit_instance = verifier_circuit::VerifierCircuit::<Bn256> {
@@ -164,24 +170,21 @@ fn main() {
         public_input: Some(n_fr_verify),
     };
 
-    // Generate parameters for VerifierCircuit
     println!("Generating parameters for Verifier Circuit...");
     let verifier_params = {
         let empty_verifier_circuit = verifier_circuit::VerifierCircuit::<Bn256> {
             proof: None,
             public_input: None,
         };
+
         generate_random_parameters::<Bn256, _, _>(empty_verifier_circuit, rng).expect("Verifier parameter generation failed")
     };
 
-    // Prepare the verifier's verification key
     let verifier_pvk = prepare_verifying_key(&verifier_params.vk);
-
-    // Create the recursive proof
     println!("Creating recursive proof...");
     let recursive_proof = create_random_proof(verifier_circuit_instance, &verifier_params, rng).expect("Recursive proof generation failed");
 
-    // Serialize recursive proof to JSON
+
     let recursive_proof_json = ProofJson {
         pi_a: [
             format!("{:?}", recursive_proof.pi_a.0),
@@ -203,6 +206,7 @@ fn main() {
         ],
     };
 
+
     let recursive_public_json = PublicJson {
         N: format!("{:?}", Fr::one()), // As per the placeholder constraint in VerifierCircuit
     };
@@ -220,7 +224,6 @@ fn main() {
     // Verify the recursive proof
     println!("Verifying recursive proof...");
     let is_recursive_valid = verify_proof(&verifier_pvk, &recursive_proof, &[Fr::one()]).expect("Recursive verification failed");
-
     println!("Recursive proof is valid: {}", is_recursive_valid);
 }
 
