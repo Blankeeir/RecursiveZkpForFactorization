@@ -9,18 +9,15 @@ use pairing::Engine;
 use ff::Field;
 
 /// A placeholder verifier circuit that simulates proof verification.
-/// In a real-world scenario, this circuit should implement the Groth16 verification logic.
+/// TODO: In a real-world scenario, this circuit should implement the Groth16 verification logic.
 #[derive(Clone)]
 pub struct VerifierCircuit<E: Engine> {
-    // The proof to verify
     pub proof: Option<Proof<E>>,
-    // The public input for the proof
     pub public_input: Option<E::Fr>,
 }
 
 impl<E: Engine> Circuit<E> for VerifierCircuit<E> {
     fn synthesize<CS: ConstraintSystem<E>>(self, cs: &mut CS) -> Result<(), SynthesisError> {
-        // Allocate the proof components
         let a = self.proof.map(|p| p.pi_a);
         let b = self.proof.map(|p| p.pi_b);
         let c = self.proof.map(|p| p.pi_c);
@@ -60,13 +57,13 @@ impl<E: Engine> Circuit<E> for VerifierCircuit<E> {
             || c.ok_or(SynthesisError::AssignmentMissing).map(|p| p.1),
         )?;
 
-        // Allocate the public input
         let pub_input_var = cs.alloc_input(
             || "public_input",
             || self.public_input.ok_or(SynthesisError::AssignmentMissing),
         )?;
 
         // Placeholder constraint: public_input == 1
+        
         // This simulates a successful verification
         cs.enforce(
             || "public_input equals 1",
