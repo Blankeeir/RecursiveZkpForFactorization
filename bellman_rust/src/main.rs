@@ -57,6 +57,7 @@ impl<E: Engine> Circuit<E> for FactorizationCircuit {
     }
 }
 
+
 #[derive(Serialize, Deserialize)]
 struct ProofJson {
     pi_a: [String; 2],
@@ -70,46 +71,47 @@ struct PublicJson {
 }
 
 fn main() {
-    // Initialize RNG
+
     let rng = &mut OsRng;
 
-    // Example values
+    // TODO: Example values: : should change later according to user input
     let p = 17u64;
     let q = 23u64;
     let n = p * q;
+
 
     // Convert to Fr
     let p_fr = Fr::from_str(&p.to_string()).expect("Invalid Fr");
     let q_fr = Fr::from_str(&q.to_string()).expect("Invalid Fr");
     let n_fr = Fr::from_str(&n.to_string()).expect("Invalid Fr");
 
-    // Create circuit instance
     let circuit = FactorizationCircuit {
         n: Some(n_fr),
         p: Some(p_fr),
         q: Some(q_fr),
     };
 
-    // Generate parameters
     println!("Generating parameters for Factorization Circuit...");
+
+    // create random parameters for the circuit
     let params = {
-        // Create an empty circuit for parameter generation
         let empty_circuit = FactorizationCircuit {
             n: None,
             p: None,
             q: None,
+            // set them to None first
         };
+
         generate_random_parameters::<Bn256, _, _>(empty_circuit, rng).expect("Parameter generation failed")
     };
 
-    // Prepare the verification key (for proof verification)
     let pvk = prepare_verifying_key(&params.vk);
 
-    // Create the proof
+
     println!("Creating proof for Factorization Circuit...");
     let proof = create_random_proof(circuit, &params, rng).expect("Proof generation failed");
 
-    // Serialize proof to JSON
+
     let proof_json = ProofJson {
         pi_a: [
             format!("{:?}", proof.pi_a.0),
